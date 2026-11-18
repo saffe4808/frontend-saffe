@@ -82,11 +82,78 @@ header img {
     color: white;
 }
 
-.btn-registrar:hover {
+.btn-registrar:hover:not(:disabled) {
     background: #0f6e2f;
+}
+
+.btn-registrar:disabled {
+    background: #8ec7a0;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .btn-atras {
     background: #d9d9d9;
     color: black;
+}
+
+/* Consentimiento obligatorio */
+.campo-consentimiento {
+    margin-top: 15px;
+    margin-bottom: 10px;
+    background: #f8faf8;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #d4e8d8;
+}
+
+.checkbox-consentimiento {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px !important;
+    font-weight: normal !important;
+    line-height: 1.4;
+    color: #2b3a2e;
+}
+
+.checkbox-consentimiento input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #138a3a;
+    cursor: pointer;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.checkbox-consentimiento a {
+    color: #138a3a;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.checkbox-consentimiento a:hover {
+    color: #0b4d1e;
+}
+
+/* Footer de Registro */
+footer {
+    text-align: center;
+    padding: 25px 0 15px 0;
+    font-size: 12px;
+    color: #555;
+    margin-top: auto;
+}
+
+.link-privacidad {
+    color: #138a3a;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.link-privacidad:hover {
+    text-decoration: underline;
+    color: #0b4d1e;
 }

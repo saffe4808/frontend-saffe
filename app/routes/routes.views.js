@@ -9,7 +9,8 @@ import {
     getAccesoAutorizado,
     getAccesoDenegado,
     getDetalleUsuario,
-    getPerfil
+    getPerfil,
+    getPrivacidad
 
 } from "../controllers/controller.views.js";
 
@@ -33,5 +34,6 @@ router.get("/acceso_denegado", getAccesoDenegado);
 
 router.get("/detalle_usuario", getDetalleUsuario);
 router.get("/perfil", getPerfil);
+router.get("/privacidad", getPrivacidad);
 
 export default router;

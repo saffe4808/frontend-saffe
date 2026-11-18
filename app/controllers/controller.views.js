@@ -8,3 +8,4 @@ export const getAccesoAutorizado = (req, res) => res.render("acceso_autorizado",
 export const getAccesoDenegado = (req, res) => res.render("acceso_denegado", { apiUrl: getApiUrl() });
 export const getDetalleUsuario = (req, res) => res.render("detalle_usuario", { apiUrl: getApiUrl() });
 export const getPerfil = (req, res) => res.render("perfil", { apiUrl: getApiUrl() });
+export const getPrivacidad = (req, res) => res.render("privacidad", { apiUrl: getApiUrl() });

@@ -253,6 +253,18 @@ footer {
     color: #555;
 }
 
+.link-privacidad {
+    color: #138a3a;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.link-privacidad:hover {
+    text-decoration: underline;
+    color: #0b4d1e;
+}
+
 @media (max-width: 760px) {
     .mascota-ayudante {
         --mascota-tamano: clamp(88px, 24vw, 120px);

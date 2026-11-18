@@ -66,6 +66,15 @@
                      style="display:none; width:100px; margin-top:10px;">
             </div>
 
+            <div class="campo campo-consentimiento">
+                <label class="checkbox-consentimiento" for="check-privacidad">
+                    <input type="checkbox" id="check-privacidad" name="consentimiento_biometrico" required>
+                    <span>
+                        Acepto la <a href="/privacidad" target="_blank" rel="noopener noreferrer">Política de Privacidad</a> y autorizo el tratamiento de mis datos biométricos.
+                    </span>
+                </label>
+            </div>
+
             <div id="mensaje-registro"></div>
 
             <div class="botones">
@@ -75,7 +84,7 @@
                     Atrás
                 </button>
 
-                <button type="submit" class="btn-registrar">
+                <button type="submit" id="btn-registrar" class="btn-registrar" disabled title="Debe aceptar la Política de Privacidad para registrarse">
                     Registrar
                 </button>
 
@@ -86,6 +95,10 @@
     </section>
 
 </main>
+
+<footer>
+    <p>© 2025 SAFFE - Sistema de Control de Acceso | <a href="/privacidad" class="link-privacidad" target="_blank">Políticas de Privacidad</a></p>
+</footer>
 
 <script src="/config.js"></script>
 <script src="/js/registrarse.js"></script>
