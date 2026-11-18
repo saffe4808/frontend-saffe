@@ -19,6 +19,9 @@ import rutas from "./app/routes/routes.views.js";
 
 const app = express();
 
+// Confianza en el proxy inverso de Render para cookies de sesión seguras en HTTPS
+app.set("trust proxy", 1);
+
 // Puerto del Frontend
 const PORT = Number(process.env.PORT || 4000);
 
