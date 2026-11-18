@@ -7,3 +7,4 @@ export const getEscaneo = (req, res) => res.render("escaneo", { apiUrl });
 export const getAccesoAutorizado = (req, res) => res.render("acceso_autorizado", { apiUrl });
 export const getAccesoDenegado = (req, res) => res.render("acceso_denegado", { apiUrl });
 export const getDetalleUsuario = (req, res) => res.render("detalle_usuario", { apiUrl });
+export const getPerfil = (req, res) => res.render("perfil", { apiUrl });

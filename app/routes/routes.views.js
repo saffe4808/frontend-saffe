@@ -8,7 +8,8 @@ import {
     getEscaneo,
     getAccesoAutorizado,
     getAccesoDenegado,
-    getDetalleUsuario
+    getDetalleUsuario,
+    getPerfil
 
 } from "../controllers/controller.views.js";
 
@@ -31,5 +32,6 @@ router.get("/acceso_autorizado", getAccesoAutorizado);
 router.get("/acceso_denegado", getAccesoDenegado);
 
 router.get("/detalle_usuario", getDetalleUsuario);
+router.get("/perfil", getPerfil);
 
 export default router;

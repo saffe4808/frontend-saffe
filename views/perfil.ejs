@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFFE - Perfil de Usuario</title>
+    <link rel="stylesheet" href="/css/perfil.css">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="topbar">
+            <div class="brand">
+                <img src="/img/logo.png" alt="Logo SAFFE" width="64">
+                <div>
+                    <strong>SAFFE</strong>
+                    <span>Control de Acceso</span>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <a href="/acceso_autorizado" class="secondary-button">Volver</a>
+                <button id="logoutButton" class="primary-button small">Salir</button>
+            </div>
+        </header>
+
+        <main class="profile-layout">
+            <section class="profile-card profile-header-card">
+                <div class="avatar-wrapper">
+                    <div id="avatarIniciales" class="avatar">U</div>
+                </div>
+
+                <div class="identity-block">
+                    <p class="eyebrow">Perfil militar</p>
+                    <h1 id="perfilNombre">Cargando...</h1>
+                    <div class="rangos-row">
+                        <span id="perfilRango" class="role-pill">Cargando...</span>
+                        <span id="estadoBadge" class="status-badge">Activo</span>
+                    </div>
+                    <p id="perfilResumen" class="summary-text">Cargando información del personal...</p>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric-card">
+                        <span>Total ingresos</span>
+                        <strong id="totalIngresos">0</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>Último acceso</span>
+                        <strong id="ultimoAcceso">--</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>Estado</span>
+                        <strong id="estadoResumen">--</strong>
+                    </div>
+                </div>
+            </section>
+
+            <nav class="tabs" aria-label="Secciones del perfil">
+                <button class="tab-button active" data-tab="tab-perfil" type="button">Mi perfil</button>
+                <button class="tab-button" data-tab="tab-historial" type="button">Historial personal</button>
+                <button id="tabGlobalButton" class="tab-button" data-tab="tab-global" type="button">Historial global</button>
+                <button id="tabGestionButton" class="tab-button" data-tab="tab-gestion" type="button">Gestión personal</button>
+            </nav>
+
+            <section class="content-panel">
+                <div id="tab-perfil" class="tab-section active">
+                    <div class="section-header">
+                        <h2>Datos básicos</h2>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label">Documento</span>
+                            <strong id="userDocumento">--</strong>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Nombre completo</span>
+                            <strong id="userNombre">--</strong>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Correo</span>
+                            <strong id="userCorreo">--</strong>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Rango</span>
+                            <strong id="userRango">--</strong>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Fecha de registro</span>
+                            <strong id="userFechaRegistro">--</strong>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Acceso autorizado</span>
+                            <strong id="userEstado">--</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-historial" class="tab-section hidden">
+                    <div class="section-header">
+                        <h2>Historial personal</h2>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Punto de acceso</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historialPersonalBody">
+                                <tr>
+                                    <td colspan="4">Cargando historial...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-global" class="tab-section hidden">
+                    <div class="section-header split-header">
+                        <h2>Historial global de accesos</h2>
+                        <span class="subtext">Vista administrativa</span>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historialGlobalBody">
+                                <tr>
+                                    <td colspan="5">No tienes permisos para ver este historial.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-gestion" class="tab-section hidden">
+                    <div class="section-header split-header">
+                        <h2>Gestión del personal</h2>
+                        <span class="subtext">Edición y permisos</span>
+                    </div>
+
+                    <div class="toolbar">
+                        <input id="searchInput" type="search" placeholder="Buscar por nombre, documento o rango">
+                    </div>
+
+                    <div class="table-wrapper compact">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Documento</th>
+                                    <th>Rango</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaGestionBody">
+                                <tr>
+                                    <td colspan="4">Sin registros.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form id="editarUsuarioForm" class="admin-form">
+                        <h3>Editar perfil seleccionado</h3>
+                        <div class="form-grid">
+                            <label>
+                                Documento
+                                <input id="formDocumento" type="text" readonly>
+                            </label>
+                            <label>
+                                Nombre
+                                <input id="formNombre" type="text" required>
+                            </label>
+                            <label>
+                                Apellido
+                                <input id="formApellido" type="text" required>
+                            </label>
+                            <label>
+                                Correo
+                                <input id="formCorreo" type="email" required>
+                            </label>
+                            <label>
+                                Rango
+                                <input id="formRango" type="text" required>
+                            </label>
+                        </div>
+                        <button type="submit" class="primary-button">Guardar cambios</button>
+                    </form>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © 2025 SAFFE - Sistema de Control de Acceso
+        </footer>
+    </div>
+
+    <script src="/config.js"></script>
+    <script src="/js/perfil.js"></script>
+</body>
+</html>
