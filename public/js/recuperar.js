@@ -34,9 +34,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const solicitarCodigo = async (boton) => {
-        const documento = documentoInput.value.trim();
-        if (!documento) {
-            recoverStatus.textContent = "Ingresa tu documento para solicitar el código.";
+        const identificador = documentoInput.value.trim();
+        if (!identificador) {
+            recoverStatus.textContent = "Ingresa tu correo o documento para solicitar el código.";
             documentoInput.focus();
             return;
         }
@@ -47,10 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let solicitudExitosa = false;
 
         try {
-            const respuesta = await fetch(`${apiUrl}/api/recuperacion/codigo`, {
+            const respuesta = await fetch(`${apiUrl}/api/forgot-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ documento }),
+                body: JSON.stringify({ email: identificador, documento: identificador }),
                 signal: AbortSignal.timeout(20000)
             });
             const resultado = await respuesta.json();
@@ -98,7 +98,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    email: documentoInput.value.trim(),
                     documento: documentoInput.value.trim(),
+                    code: codigoInput.value.trim(),
                     codigo: codigoInput.value.trim()
                 })
             });
@@ -144,12 +146,15 @@ document.addEventListener("DOMContentLoaded", () => {
         resetStatus.textContent = "Actualizando contraseña...";
 
         try {
-            const respuesta = await fetch(`${apiUrl}/api/recuperacion/restablecer`, {
+            const respuesta = await fetch(`${apiUrl}/api/reset-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    email: documentoInput.value.trim(),
                     documento: documentoInput.value.trim(),
+                    code: codigoInput.value.trim(),
                     token: tokenRecuperacion,
+                    new_password: contrasena,
                     contrasena
                 })
             });
