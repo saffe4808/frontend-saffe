@@ -155,16 +155,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // 3. Almacenar el token e ingresar al sistema
-            if (resultado.token) {
-                localStorage.setItem("token", resultado.token);
+            if (!resultado.token) {
+                throw new Error("El inicio de sesión no devolvió un token válido.");
             }
-            
-            window.location.href = "/acceso_autorizado";
+
+            localStorage.setItem("token", resultado.token);
+            const perfilRespuesta = await fetch(`${apiUrl}/api/perfil`, {
+                headers: { Authorization: `Bearer ${resultado.token}` }
+            });
+            const perfil = await perfilRespuesta.json();
+            if (!perfilRespuesta.ok) {
+                localStorage.removeItem("token");
+                throw new Error(perfil.mensaje || "No se pudo verificar el perfil.");
+            }
+
+            window.location.href = perfil.rol === "admin"
+                ? "/perfil"
+                : "/acceso_autorizado";
 
         } catch (error) {
             console.error("Error de conexión con el backend:", error);
-            alert("No se pudo conectar con el Backend. Verifique la conexión.");
+            alert(error.message || "No se pudo conectar con el Backend. Verifique la conexión.");
         }
     });
 });

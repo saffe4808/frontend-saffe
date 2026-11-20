@@ -9,6 +9,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
+        const perfilRespuesta = await fetch(`${apiUrl}/api/perfil`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!perfilRespuesta.ok) {
+            const errorData = await perfilRespuesta.json();
+            throw new Error(errorData.mensaje || "Sesión inválida");
+        }
+
+        const perfil = await perfilRespuesta.json();
+        if (perfil.rol === "admin") {
+            window.location.href = "/perfil";
+            return;
+        }
+
         const respuesta = await fetch(`${apiUrl}/api/historial`, {
             headers: { Authorization: `Bearer ${token}` }
         });

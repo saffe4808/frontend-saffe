@@ -10,8 +10,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const state = {
         usuario: null,
         historial: [],
+        historialPersonal: [],
         usuarios: [],
-        usuarioSeleccionado: null
+        usuarioSeleccionado: null,
+        filtrosHistorial: {}
     };
 
     const elements = {
@@ -32,6 +34,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         userEstado: document.getElementById("userEstado"),
         historialPersonalBody: document.getElementById("historialPersonalBody"),
         historialGlobalBody: document.getElementById("historialGlobalBody"),
+        globalHistoryFilterForm: document.getElementById("globalHistoryFilterForm"),
+        historyFilterDocumento: document.getElementById("historyFilterDocumento"),
+        historyFilterNombre: document.getElementById("historyFilterNombre"),
+        historyFilterRango: document.getElementById("historyFilterRango"),
+        clearGlobalHistoryFilters: document.getElementById("clearGlobalHistoryFilters"),
         tablaGestionBody: document.getElementById("tablaGestionBody"),
         searchInput: document.getElementById("searchInput"),
         formDocumento: document.getElementById("formDocumento"),
@@ -112,7 +119,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const usuario = state.usuario;
         const nombreCompleto = `${usuario.nombre || ""} ${usuario.apellido || ""}`.trim();
         const rango = usuario.rango || "Sin rango";
-        const personalHistory = state.historial.filter((entry) => entry.documento === usuario.documento);
+        const personalHistory = state.historialPersonal.filter((entry) => entry.documento === usuario.documento);
         const ultimo = personalHistory[0];
         const accStatus = ultimo ? normalizeStatus(ultimo.estado) : "Autorizado";
         const esAdmin = isAdminRole(usuario);
@@ -144,7 +151,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const personalHistory = state.historial.filter((entry) => entry.documento === state.usuario.documento);
+        const personalHistory = state.historialPersonal.filter((entry) => entry.documento === state.usuario.documento);
 
         if (personalHistory.length === 0) {
             elements.historialPersonalBody.innerHTML = '<tr><td colspan="4">No se registran ingresos para este usuario.</td></tr>';
@@ -171,12 +178,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         const esAdmin = isAdminRole(state.usuario);
 
         if (!esAdmin) {
-            elements.historialGlobalBody.innerHTML = '<tr><td colspan="5">No tienes permisos para ver este historial.</td></tr>';
+            elements.historialGlobalBody.innerHTML = '<tr><td colspan="7">No tienes permisos para ver este historial.</td></tr>';
             return;
         }
 
         if (state.historial.length === 0) {
-            elements.historialGlobalBody.innerHTML = '<tr><td colspan="5">No hay accesos registrados.</td></tr>';
+            elements.historialGlobalBody.innerHTML = '<tr><td colspan="7">No hay accesos que coincidan con los filtros.</td></tr>';
             return;
         }
 
@@ -190,7 +197,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             return `
                 <tr>
+                    <td>${entry.documento || "--"}</td>
                     <td>${usuario}</td>
+                    <td>${entry.rango || "Sin rango"}</td>
                     <td>${formatDate(entry.fecha_acceso || new Date())}</td>
                     <td>${entry.hora || "--:--"}</td>
                     <td><span class="badge ${className}">${estado}</span></td>
@@ -251,13 +260,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderUsersForManagement(filtered);
     };
 
-    const loadData = async () => {
+    const loadData = async (filtros = state.filtrosHistorial) => {
         try {
+            state.filtrosHistorial = filtros;
+            const query = new URLSearchParams(
+                Object.entries(filtros).filter(([, value]) => value)
+            ).toString();
+            const historialUrl = `${apiUrl}/api/historial${query ? `?${query}` : ""}`;
             const [perfilResponse, historialResponse] = await Promise.all([
                 fetch(`${apiUrl}/api/perfil`, {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch(`${apiUrl}/api/historial`, {
+                fetch(historialUrl, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
@@ -274,15 +288,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             state.historial = await historialResponse.json();
 
             if (isAdminRole(state.usuario)) {
-                const usuariosResponse = await fetch(`${apiUrl}/api/usuarios`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                const historialPersonalParams = new URLSearchParams({
+                    documento: state.usuario.documento
                 });
+                const [historialPersonalResponse, usuariosResponse] = await Promise.all([
+                    fetch(`${apiUrl}/api/historial?${historialPersonalParams}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }),
+                    fetch(`${apiUrl}/api/usuarios`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    })
+                ]);
 
+                if (!historialPersonalResponse.ok) {
+                    throw new Error("No se pudo obtener el historial personal.");
+                }
                 if (!usuariosResponse.ok) {
                     throw new Error("No se pudo obtener la gestión del personal.");
                 }
 
+                state.historialPersonal = await historialPersonalResponse.json();
                 state.usuarios = await usuariosResponse.json();
+            } else {
+                state.historialPersonal = state.historial;
             }
 
             renderProfileHeader();
@@ -298,7 +326,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             elements.tabGlobalButton.style.display = isAdminRole(state.usuario) ? "inline-flex" : "none";
             elements.tabGestionButton.style.display = isAdminRole(state.usuario) ? "inline-flex" : "none";
 
-            setActiveTab("tab-perfil");
         } catch (error) {
             console.error("Error cargando perfil:", error);
             localStorage.removeItem("token");
@@ -311,6 +338,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     elements.searchInput?.addEventListener("input", applyFilters);
+
+    elements.globalHistoryFilterForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await loadData({
+            documento: elements.historyFilterDocumento.value.trim(),
+            nombre: elements.historyFilterNombre.value.trim(),
+            rango: elements.historyFilterRango.value.trim()
+        });
+    });
+
+    elements.clearGlobalHistoryFilters?.addEventListener("click", async () => {
+        elements.globalHistoryFilterForm.reset();
+        await loadData({});
+    });
 
     elements.logoutButton?.addEventListener("click", () => {
         localStorage.removeItem("token");

@@ -18,7 +18,7 @@
             </div>
 
             <div class="header-actions">
-                <a href="/acceso_autorizado" class="secondary-button">Volver</a>
+                <a href="/" class="secondary-button">Ir al inicio</a>
                 <button id="logoutButton" class="primary-button small">Salir</button>
             </div>
         </header>
@@ -130,11 +130,21 @@
                         <span class="subtext">Vista administrativa</span>
                     </div>
 
+                    <form id="globalHistoryFilterForm" class="toolbar">
+                        <input id="historyFilterDocumento" type="search" placeholder="Filtrar por documento">
+                        <input id="historyFilterNombre" type="search" placeholder="Filtrar por nombre">
+                        <input id="historyFilterRango" type="search" placeholder="Filtrar por rango">
+                        <button type="submit" class="primary-button">Filtrar</button>
+                        <button id="clearGlobalHistoryFilters" type="button" class="secondary-button">Limpiar</button>
+                    </form>
+
                     <div class="table-wrapper">
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th>Documento</th>
                                     <th>Usuario</th>
+                                    <th>Rango</th>
                                     <th>Fecha</th>
                                     <th>Hora</th>
                                     <th>Estado</th>
@@ -143,7 +153,7 @@
                             </thead>
                             <tbody id="historialGlobalBody">
                                 <tr>
-                                    <td colspan="5">No tienes permisos para ver este historial.</td>
+                                    <td colspan="7">No tienes permisos para ver este historial.</td>
                                 </tr>
                             </tbody>
                         </table>

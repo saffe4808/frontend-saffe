@@ -170,9 +170,19 @@ botonScan.addEventListener("click", async () => {
         if (respuesta.ok && data.token) {
             // Guardar el token de autenticación exactamente igual que en el login tradicional
             localStorage.setItem("token", data.token);
+            const perfilRespuesta = await fetch(`${API_URL}/api/perfil`, {
+                headers: { Authorization: `Bearer ${data.token}` }
+            });
+            const perfil = await perfilRespuesta.json();
+
+            if (!perfilRespuesta.ok) {
+                localStorage.removeItem("token");
+                throw new Error(perfil.mensaje || "No se pudo verificar el perfil.");
+            }
 
             const nombreUsuario = data.usuario ? `${data.usuario.nombre} ${data.usuario.apellido || ""}` : "Personal Autorizado";
             const distancia = data.distancia !== undefined ? `(Distancia euclidiana: ${data.distancia})` : "";
+            const paginaDestino = perfil.rol === "admin" ? "/perfil" : "/acceso_autorizado";
 
             campoMensaje.innerHTML = `
                 <div style="color: #0b4d1e; font-weight: bold; margin-top: 15px; border: 2px solid #0b4d1e; padding: 12px; background-color: #e8f5e9; border-radius: 8px;">
@@ -186,7 +196,7 @@ botonScan.addEventListener("click", async () => {
 
             // Redirigir a acceso autorizado tras 1.5 segundos
             setTimeout(() => {
-                window.location.href = "/acceso_autorizado";
+                window.location.href = paginaDestino;
             }, 1500);
 
         } else {

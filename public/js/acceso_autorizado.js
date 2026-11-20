@@ -26,6 +26,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const datos = await respuesta.json();
+        if (datos.rol === "admin") {
+            window.location.href = "/perfil";
+            return;
+        }
+
         nombreEl.textContent = `${datos.nombre} ${datos.apellido}`.trim();
         rangoEl.textContent = datos.rango || "Sin rango";
     } catch (error) {
