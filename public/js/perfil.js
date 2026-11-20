@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         userNombre: document.getElementById("userNombre"),
         userCorreo: document.getElementById("userCorreo"),
         userRango: document.getElementById("userRango"),
+        userRol: document.getElementById("userRol"),
         userFechaRegistro: document.getElementById("userFechaRegistro"),
         userEstado: document.getElementById("userEstado"),
         historialPersonalBody: document.getElementById("historialPersonalBody"),
@@ -38,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         formApellido: document.getElementById("formApellido"),
         formCorreo: document.getElementById("formCorreo"),
         formRango: document.getElementById("formRango"),
+        crearUsuarioForm: document.getElementById("crearUsuarioForm"),
         editarUsuarioForm: document.getElementById("editarUsuarioForm"),
         tabGlobalButton: document.getElementById("tabGlobalButton"),
         tabGestionButton: document.getElementById("tabGestionButton"),
@@ -86,9 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         })}`;
     };
 
-    const isAdminRole = (rango = "") => {
-        return /(administrador|comandante|mayor|coronel|general|jefe|director)/i.test(rango);
-    };
+    const isAdminRole = (usuario) => usuario?.rol === "admin";
 
     const setActiveTab = (tabId) => {
         const buttons = document.querySelectorAll(".tab-button");
@@ -115,11 +115,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const personalHistory = state.historial.filter((entry) => entry.documento === usuario.documento);
         const ultimo = personalHistory[0];
         const accStatus = ultimo ? normalizeStatus(ultimo.estado) : "Autorizado";
-        const esAdmin = isAdminRole(rango);
+        const esAdmin = isAdminRole(usuario);
 
         elements.avatarIniciales.textContent = `${(usuario.nombre || "U").charAt(0)}${(usuario.apellido || "").charAt(0) || ""}`.toUpperCase();
         elements.perfilNombre.textContent = nombreCompleto || "Usuario SAFFE";
-        elements.perfilRango.textContent = rango;
+        elements.perfilRango.textContent = esAdmin ? `Administrador · ${rango}` : rango;
         elements.perfilResumen.textContent = esAdmin
             ? "Administrador del sistema con acceso a gestión global del personal y seguimiento institucional."
             : "Personal activo con acceso institucional registrado y historial personal disponible.";
@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         elements.userNombre.textContent = nombreCompleto || "--";
         elements.userCorreo.textContent = usuario.correo || "--";
         elements.userRango.textContent = rango;
+        elements.userRol.textContent = esAdmin ? "Administrador" : "Usuario";
         elements.userFechaRegistro.textContent = formatDate(usuario.fecha_registro || new Date());
         elements.userEstado.textContent = accStatus;
     };
@@ -167,7 +168,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const renderGlobalHistory = () => {
-        const esAdmin = isAdminRole(state.usuario?.rango || "");
+        const esAdmin = isAdminRole(state.usuario);
 
         if (!esAdmin) {
             elements.historialGlobalBody.innerHTML = '<tr><td colspan="5">No tienes permisos para ver este historial.</td></tr>';
@@ -205,7 +206,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const renderUsersForManagement = (usuarios) => {
         if (!usuarios.length) {
-            elements.tablaGestionBody.innerHTML = '<tr><td colspan="4">No se encontraron usuarios con ese criterio.</td></tr>';
+            elements.tablaGestionBody.innerHTML = '<tr><td colspan="5">No se encontraron usuarios con ese criterio.</td></tr>';
             return;
         }
 
@@ -214,8 +215,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <td>${`${usuario.nombre || ""} ${usuario.apellido || ""}`.trim() || "Sin nombre"}</td>
                 <td>${usuario.documento || "--"}</td>
                 <td>${usuario.rango || "Sin rango"}</td>
+                <td>${usuario.rol === "admin" ? "Administrador" : "Usuario"}</td>
                 <td>
                     <button class="status-action secondary" data-action="edit-user" data-documento="${usuario.documento}" type="button">Editar</button>
+                    <button class="status-action secondary" data-action="delete-user" data-documento="${usuario.documento}" type="button">Eliminar</button>
                 </td>
             </tr>
         `).join("");
@@ -270,7 +273,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             state.usuario = await perfilResponse.json();
             state.historial = await historialResponse.json();
 
-            if (isAdminRole(state.usuario.rango || "")) {
+            if (isAdminRole(state.usuario)) {
                 const usuariosResponse = await fetch(`${apiUrl}/api/usuarios`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -286,14 +289,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             renderPersonalHistory();
             renderGlobalHistory();
 
-            if (isAdminRole(state.usuario.rango || "")) {
+            if (isAdminRole(state.usuario)) {
                 renderUsersForManagement(state.usuarios);
             } else {
-                elements.tablaGestionBody.innerHTML = '<tr><td colspan="4">Este perfil no tiene permisos administrativos.</td></tr>';
+                elements.tablaGestionBody.innerHTML = '<tr><td colspan="5">Este perfil no tiene permisos administrativos.</td></tr>';
             }
 
-            elements.tabGlobalButton.style.display = isAdminRole(state.usuario.rango || "") ? "inline-flex" : "none";
-            elements.tabGestionButton.style.display = isAdminRole(state.usuario.rango || "") ? "inline-flex" : "none";
+            elements.tabGlobalButton.style.display = isAdminRole(state.usuario) ? "inline-flex" : "none";
+            elements.tabGestionButton.style.display = isAdminRole(state.usuario) ? "inline-flex" : "none";
 
             setActiveTab("tab-perfil");
         } catch (error) {
@@ -353,6 +356,63 @@ document.addEventListener("DOMContentLoaded", async () => {
                 populateUserForm(usuario);
                 setActiveTab("tab-gestion");
             }
+        }
+
+        if (action === "delete-user") {
+            const documento = target.dataset.documento;
+            if (!window.confirm(`¿Eliminar al usuario con documento ${documento}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiUrl}/api/usuarios/${encodeURIComponent(documento)}`, {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.mensaje || "No se pudo eliminar al usuario.");
+                }
+
+                await loadData();
+            } catch (error) {
+                console.error("Error eliminando usuario:", error);
+                alert(error.message || "No se pudo eliminar al usuario.");
+            }
+        }
+    });
+
+    elements.crearUsuarioForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const payload = {
+            documento: document.getElementById("nuevoDocumento").value.trim(),
+            nombre: document.getElementById("nuevoNombre").value.trim(),
+            apellido: document.getElementById("nuevoApellido").value.trim(),
+            correo: document.getElementById("nuevoCorreo").value.trim(),
+            contraseña: document.getElementById("nuevaContrasena").value,
+            rango: document.getElementById("nuevoRango").value.trim()
+        };
+
+        try {
+            const response = await fetch(`${apiUrl}/api/usuarios`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.mensaje || "No se pudo registrar al usuario.");
+            }
+
+            elements.crearUsuarioForm.reset();
+            alert("Usuario registrado correctamente.");
+            await loadData();
+        } catch (error) {
+            console.error("Error registrando usuario:", error);
+            alert(error.message || "No se pudo registrar al usuario.");
         }
     });
 

@@ -86,6 +86,10 @@
                             <strong id="userRango">--</strong>
                         </div>
                         <div class="info-item">
+                            <span class="label">Rol del sistema</span>
+                            <strong id="userRol">--</strong>
+                        </div>
+                        <div class="info-item">
                             <span class="label">Fecha de registro</span>
                             <strong id="userFechaRegistro">--</strong>
                         </div>
@@ -163,16 +167,48 @@
                                     <th>Nombre</th>
                                     <th>Documento</th>
                                     <th>Rango</th>
+                                    <th>Rol</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaGestionBody">
                                 <tr>
-                                    <td colspan="4">Sin registros.</td>
+                                    <td colspan="5">Sin registros.</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+
+                    <form id="crearUsuarioForm" class="admin-form">
+                        <h3>Registrar personal</h3>
+                        <div class="form-grid">
+                            <label>
+                                Documento
+                                <input id="nuevoDocumento" type="text" required>
+                            </label>
+                            <label>
+                                Nombre
+                                <input id="nuevoNombre" type="text" required>
+                            </label>
+                            <label>
+                                Apellido
+                                <input id="nuevoApellido" type="text" required>
+                            </label>
+                            <label>
+                                Correo
+                                <input id="nuevoCorreo" type="email" required>
+                            </label>
+                            <label>
+                                Contraseña inicial
+                                <input id="nuevaContrasena" type="password" required>
+                            </label>
+                            <label>
+                                Rango
+                                <input id="nuevoRango" type="text">
+                            </label>
+                        </div>
+                        <button type="submit" class="primary-button">Registrar usuario</button>
+                    </form>
 
                     <form id="editarUsuarioForm" class="admin-form">
                         <h3>Editar perfil seleccionado</h3>
