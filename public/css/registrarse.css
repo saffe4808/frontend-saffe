@@ -146,6 +146,156 @@ footer {
     margin-top: auto;
 }
 
+/* Sección Biométrica en Registro */
+.campo-biometrico {
+    background: #fbfdfc;
+    border: 1px dashed #138a3a;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.biometrico-opciones {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-secundario {
+    background: #0b4d1e;
+    color: white;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-weight: 600;
+}
+
+.btn-secundario:disabled {
+    background: #8fa896;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-secundario:hover:not(:disabled) {
+    background: #083715;
+}
+
+.separador-o {
+    font-size: 12px;
+    color: #666;
+    font-weight: bold;
+}
+
+.label-archivo {
+    background: #eef2f0;
+    border: 1px solid #c2d6c7;
+    color: #1e3823;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.label-archivo:hover {
+    background: #ddeadf;
+}
+
+.campo-biometrico input[type="file"] {
+    display: none;
+}
+
+.contenedor-video-registro {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.video-overlay-wrapper {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #138a3a;
+    background-color: #000;
+}
+
+#video-registro {
+    display: block;
+    width: 100%;
+    max-width: 340px;
+    height: auto;
+}
+
+#canvas-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.camara-acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.btn-captura {
+    background: #138a3a;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-captura:hover {
+    background: #0f6e2f;
+}
+
+.btn-cancelar-camara {
+    background: #d9534f;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.estado-biometrico {
+    font-size: 12.5px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: #f0f4f1;
+    color: #2e4732;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+#preview {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #138a3a;
+    margin: 10px auto 0 auto;
+    display: block;
+}
+
 .link-privacidad {
     color: #138a3a;
     text-decoration: none;

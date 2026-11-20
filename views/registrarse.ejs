@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,98 +11,130 @@
 
 <body>
 
-<header>
-    <img src="/img/logo.png" alt="logo SAFFE" width="100">
-    <h1>SAFFE</h1>
-    <h2>Registro de Personal</h2>
-</header>
+    <header>
+        <img src="/img/logo.png" alt="logo SAFFE" width="100">
+        <h1>SAFFE</h1>
+        <h2>Registro de Personal</h2>
+    </header>
 
-<main>
+    <main>
 
-    <section class="registro-container">
+        <section class="registro-container">
 
-        <form id="form-registro">
+            <form id="form-registro">
 
-            <div class="campo">
-                <label for="nombre">Nombres:</label>
-                <input type="text" id="nombre" required>
-            </div>
+                <div class="campo">
+                    <label for="nombre">Nombres:</label>
+                    <input type="text" id="nombre" required>
+                </div>
 
-            <div class="campo">
-                <label for="apellidos">Apellidos:</label>
-                <input type="text" id="apellidos" required>
-            </div>
+                <div class="campo">
+                    <label for="apellidos">Apellidos:</label>
+                    <input type="text" id="apellidos" required>
+                </div>
 
-            <div class="campo">
-                <label for="cedula">Cédula:</label>
-                <input type="number" id="cedula" required>
-            </div>
+                <div class="campo">
+                    <label for="cedula">Cédula:</label>
+                    <input type="number" id="cedula" required>
+                </div>
 
-            <div class="campo">
-                <label for="correo">Correo Electrónico:</label>
-                <input type="email" id="correo" required>
-            </div>
+                <div class="campo">
+                    <label for="correo">Correo Electrónico:</label>
+                    <input type="email" id="correo" required>
+                </div>
 
-            <div class="campo">
-                <label for="password">Contraseña:</label>
-                <input type="password" id="password" required>
-            </div>
+                <div class="campo">
+                    <label for="password">Contraseña:</label>
+                    <input type="password" id="password" required>
+                </div>
 
-            <div class="campo">
-                <label for="rango">Rango Militar:</label>
-                <select id="rango" required>
-                    <option value="">Seleccionar rango</option>
-                    <option value="Soldado">Soldado</option>
-                    <option value="Cabo">Cabo</option>
-                    <option value="Sargento">Sargento</option>
-                    <option value="Teniente">Teniente</option>
-                </select>
-            </div>
+                <div class="campo">
+                    <label for="rango">Rango Militar:</label>
+                    <select id="rango" required>
+                        <option value="">Seleccionar rango</option>
+                        <option value="Soldado">Soldado</option>
+                        <option value="Cabo">Cabo</option>
+                        <option value="Sargento">Sargento</option>
+                        <option value="Teniente">Teniente</option>
+                    </select>
+                </div>
 
-            <div class="campo">
-                <label for="foto">Foto Facial (Perfil):</label>
-                <input type="file" id="foto" accept="image/*" required>
+                <div class="campo campo-consentimiento">
+                    <label class="checkbox-consentimiento" for="check-privacidad">
+                        <input type="checkbox" id="check-privacidad" name="consentimiento_biometrico" required>
+                        <span>
+                            Acepto la <a href="/privacidad" target="_blank" rel="noopener noreferrer">Política de
+                                Privacidad</a> y autorizo el tratamiento de mis datos biométricos.
+                        </span>
+                    </label>
+                </div>
 
-                <img id="preview" src="#" alt="Vista previa"
-                     style="display:none; width:100px; margin-top:10px;">
-            </div>
+                <!-- Sección de Escaneo / Captura Facial Biométrica -->
+                <div class="campo campo-biometrico" id="seccion-biometrica">
+                    <label>Registro Facial Biométrico:</label>
+                    <div class="biometrico-opciones">
+                        <button type="button" id="btn-activar-camara" class="btn-secundario" disabled>
+                            📷 Abrir Cámara Web
+                        </button>
+                        <span class="separador-o">o</span>
+                        <label for="foto" class="label-archivo">Cargar Fotografía</label>
+                        <input type="file" id="foto" accept="image/*">
+                    </div>
 
-            <div class="campo campo-consentimiento">
-                <label class="checkbox-consentimiento" for="check-privacidad">
-                    <input type="checkbox" id="check-privacidad" name="consentimiento_biometrico" required>
-                    <span>
-                        Acepto la <a href="/privacidad" target="_blank" rel="noopener noreferrer">Política de Privacidad</a> y autorizo el tratamiento de mis datos biométricos.
-                    </span>
-                </label>
-            </div>
+                    <div class="contenedor-video-registro" id="contenedor-camara" style="display: none;">
+                        <div class="video-overlay-wrapper">
+                            <video id="video-registro" autoplay playsinline muted></video>
+                            <canvas id="canvas-overlay"></canvas>
+                        </div>
+                        <div class="camara-acciones">
+                            <button type="button" id="btn-capturar-rostro" class="btn-captura">
+                                Capturar Vector Facial
+                            </button>
+                            <button type="button" id="btn-cerrar-camara" class="btn-cancelar-camara">
+                                Cerrar Cámara
+                            </button>
+                        </div>
+                    </div>
 
-            <div id="mensaje-registro"></div>
+                    <div class="estado-biometrico" id="estado-biometrico">
+                        <span class="icono-estado">ℹ️</span>
+                        <span id="texto-estado-biometrico">Acepta la Política de Privacidad para habilitar la captura
+                            biométrica.</span>
+                    </div>
 
-            <div class="botones">
+                    <img id="preview" src="#" alt="Vista previa" style="display: none;">
+                </div>
 
-                <button type="button" class="btn-atras"
-                    onclick="window.location.href='/'">
-                    Atrás
-                </button>
+                <div id="mensaje-registro"></div>
 
-                <button type="submit" id="btn-registrar" class="btn-registrar" disabled title="Debe aceptar la Política de Privacidad para registrarse">
-                    Registrar
-                </button>
+                <div class="botones">
 
-            </div>
+                    <button type="button" class="btn-atras" onclick="window.location.href='/'">
+                        Atrás
+                    </button>
 
-        </form>
+                    <button type="submit" id="btn-registrar" class="btn-registrar" disabled
+                        title="Debe aceptar la Política de Privacidad para registrarse">
+                        Registrar
+                    </button>
 
-    </section>
+                </div>
 
-</main>
+            </form>
 
-<footer>
-    <p>© 2025 SAFFE - Sistema de Control de Acceso | <a href="/privacidad" class="link-privacidad" target="_blank">Políticas de Privacidad</a></p>
-</footer>
+        </section>
 
-<script src="/config.js"></script>
-<script src="/js/registrarse.js"></script>
+    </main>
+
+    <footer>
+        <p>© 2025 SAFFE - Sistema de Control de Acceso | <a href="/privacidad" class="link-privacidad"
+                target="_blank">Políticas de Privacidad</a></p>
+    </footer>
+
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <script src="/js/registrarse.js"></script>
 
 </body>
+
 </html>

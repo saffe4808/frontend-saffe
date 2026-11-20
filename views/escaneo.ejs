@@ -20,14 +20,15 @@
 
     <section id="scanner">
 
-        <p>Mire al frente y muestre su rostro completo</p>
+        <p id="instruccion-escaneo">Mire al frente y muestre su rostro completo</p>
 
-        <video id="camara" autoplay playsinline></video>
-
-        <br><br>
+        <div class="video-container">
+            <video id="camara" autoplay playsinline muted></video>
+            <canvas id="canvas-escaneo"></canvas>
+        </div>
 
         <div class="controles">
-            <button id="botonscan">CAPTURAR ROSTRO</button>
+            <button id="botonscan" disabled>CARGANDO MODELOS BIOMÉTRICOS...</button>
         </div>
 
         <div id="contenedor-mensaje">
@@ -45,6 +46,7 @@
 </main>
 
 <script src="/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 <script src="/js/scaneo.js"></script>
 
 </body>

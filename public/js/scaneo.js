@@ -1,230 +1,229 @@
-// Obtenemos los elementos HTML con los que vamos a interactuar
-const video = document.getElementById("camara");
-const boton = document.getElementById("botonscan");
-const canvas = document.getElementById("foto");
-const ctx = canvas.getContext("2d");
+// Configuración del Endpoint
+const API_URL = (window.SAFFE_API_URL || "https://saffe-backend.up.railway.app").replace(/\/+$/, "");
 
-// CONFIGURACIÓN DE TU COMPREFACE LOCAL
-const API_URL = window.SAFFE_API_URL || "https://saffe-backend.up.railway.app";
-const COMPREFACE_URL = `${window.SAFFE_COMPREFACE_URL || "http://localhost:8000"}/api/v1/recognition/recognize`;
-const API_KEY = window.SAFFE_COMPREFACE_KEY || "";
+const video = document.getElementById("camara");
+const canvasOverlay = document.getElementById("canvas-escaneo");
+const botonScan = document.getElementById("botonscan");
+const campoMensaje = document.getElementById("mensaje");
+const instruccion = document.getElementById("instruccion-escaneo");
+
+let streamCamara = null;
+let modelosCargados = false;
+let intervaloDeteccion = null;
+let escaneoEnProgreso = false;
 
 /**
- * Función para encender la cámara web o frontal del celular.
+ * Cargar los modelos de Face-API desde jsDelivr.
  */
-async function iniciarCamara() {
+async function cargarModelos() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" }
-        });
-        video.srcObject = stream;
-        video.onloadedmetadata = () => {
-            video.play();
-        };
+        campoMensaje.innerHTML = `<span style="color:#0b4d1e;">⏳ Cargando modelos biométricos...</span>`;
+
+        const MODELS_URI = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+        await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_URI),
+            faceapi.nets.faceLandmark68Net.loadFromUri(MODELS_URI),
+            faceapi.nets.faceRecognitionNet.loadFromUri(MODELS_URI)
+        ]);
+
+        modelosCargados = true;
+        campoMensaje.innerHTML = `<span style="color:#0b4d1e;">✅ Motor biométrico listo. Mire al frente.</span>`;
+        botonScan.disabled = false;
+        botonScan.textContent = "AUTENTICAR ROSTRO";
     } catch (error) {
-        alert("No se pudo acceder a la cámara: " + error);
+        console.error("Error cargando modelos face-api:", error);
+        campoMensaje.innerHTML = `<span style="color:#b71c1c;">❌ Error al cargar los modelos biométricos: ${error.message}</span>`;
     }
 }
 
-// Ejecutamos la función apenas carga el script
-iniciarCamara();
-
 /**
- * Función auxiliar para convertir la imagen del canvas (Base64) a un archivo binario (Blob)
- * que la API de CompreFace pueda entender.
+ * Iniciar la cámara web
  */
-function canvasToBlob(canvasElement) {
-    return new Promise((resolve) => {
-        canvasElement.toBlob((blob) => {
-            resolve(blob);
-        }, "image/jpeg", 0.95); // Comprimimos a JPG de buena calidad
-    });
+async function iniciarCamara() {
+    try {
+        streamCamara = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "user",
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            },
+            audio: false
+        });
+
+        video.srcObject = streamCamara;
+
+        video.addEventListener("play", () => {
+            iniciarTrackingVisual();
+        });
+    } catch (error) {
+        console.error("Error al acceder a la cámara:", error);
+        campoMensaje.innerHTML = `<span style="color:#b71c1c;">❌ No se pudo acceder a la cámara: ${error.message}. Verifica los permisos.</span>`;
+    }
 }
 
 /**
- * Evento al hacer clic en el botón "CAPTURAR ROSTRO"
+ * Dibujar el indicador visual en tiempo real alrededor del rostro
  */
-boton.addEventListener("click", async () => {
-    // Ajustamos el lienzo (canvas) al tamaño exacto de la cámara
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+function iniciarTrackingVisual() {
+    if (intervaloDeteccion) clearInterval(intervaloDeteccion);
 
-    // Dibujamos el fotograma actual en el lienzo oculto
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    intervaloDeteccion = setInterval(async () => {
+        if (!modelosCargados || !video || video.paused || video.ended || escaneoEnProgreso) return;
 
-    // Convertimos el dibujo a formato base64 para mostrarlo visualmente en el HTML
-    const fotoBase64 = canvas.toDataURL("image/jpeg");
+        const displaySize = {
+            width: video.videoWidth || video.clientWidth,
+            height: video.videoHeight || video.clientHeight
+        };
 
-    // Buscamos si ya habíamos tomado una foto antes y la borramos
-    const anterior = document.getElementById("fotoTomada");
-    if (anterior) anterior.remove();
+        if (displaySize.width === 0 || displaySize.height === 0) return;
 
-    // Creamos la etiqueta <img> para mostrar el rostro capturado en pantalla
-    const img = new Image();
-    img.id = "fotoTomada";
-    img.src = fotoBase64;
-    img.style.width = "90%";
-    img.style.maxWidth = "400px";
-    img.style.borderRadius = "10px";
-    img.style.border = "3px solid #0b4d1e";
-    img.style.marginTop = "20px";
-    
-    document.getElementById("scanner").appendChild(img);
+        faceapi.matchDimensions(canvasOverlay, displaySize);
 
-    // --- CONSUMO DE LA API REAL DE COMPREFACE ---
-    const campoMensaje = document.getElementById("mensaje");
-    campoMensaje.innerHTML = "Procesando escaneo facial en servidores locales...";
+        try {
+            const opciones = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+            const deteccion = await faceapi.detectSingleFace(video, opciones);
+
+            const ctx = canvasOverlay.getContext("2d");
+            ctx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
+
+            if (deteccion) {
+                const resizedDeteccion = faceapi.resizeResults(deteccion, displaySize);
+                const box = resizedDeteccion.box;
+
+                // Dibujar marco verde militar tecnológico
+                ctx.strokeStyle = "#138a3a";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+                ctx.fillStyle = "rgba(19, 138, 58, 0.2)";
+                ctx.fillRect(box.x, box.y, box.width, box.height);
+
+                ctx.font = "bold 13px Arial";
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("ROSTRO DETECTADO", box.x + 5, box.y > 20 ? box.y - 8 : box.y + 15);
+            }
+        } catch {
+            // Ignorar frames intermedios
+        }
+    }, 150);
+}
+
+/**
+ * Detener la cámara y liberar recursos
+ */
+function detenerCamara() {
+    if (intervaloDeteccion) clearInterval(intervaloDeteccion);
+    if (streamCamara) {
+        streamCamara.getTracks().forEach(track => track.stop());
+    }
+}
+
+/**
+ * Evento de Escaneo y Autenticación Facial
+ */
+botonScan.addEventListener("click", async () => {
+    if (!modelosCargados || escaneoEnProgreso) return;
+
+    escaneoEnProgreso = true;
+    botonScan.disabled = true;
+    botonScan.textContent = "PROCESANDO ROSTRO...";
+    campoMensaje.innerHTML = `<span style="color:#0b4d1e;">🔍 Extrayendo vector facial en el navegador...</span>`;
 
     try {
-        // 1. Convertimos el canvas a un archivo binario real
-        const blob = await canvasToBlob(canvas);
+        const opciones = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
 
-        // 2. Preparamos el contenedor "FormData" que exige la API para subir archivos
-        const formData = new FormData();
-        formData.append("file", blob, "captura.jpg");
+        // Detectar rostro, puntos de referencia y calcular el descriptor de 128 valores
+        const resultadoDeteccion = await faceapi
+            .detectSingleFace(video, opciones)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
 
-        // 3. Enviamos la foto a tu servidor local con fetch
-        const respuesta = await fetch(COMPREFACE_URL, {
+        if (!resultadoDeteccion) {
+            campoMensaje.innerHTML = `
+                <div style="color: #b71c1c; font-weight: bold; margin-top: 10px; border: 2px solid #b71c1c; padding: 10px; background-color: #ffebee; border-radius: 6px;">
+                    ⚠️ No se detectó ningún rostro con claridad.<br>
+                    <span style="font-weight: normal; font-size: 13px;">Asegúrese de mirar al frente con buena iluminación y sin accesorios que cubran su cara.</span>
+                </div>
+            `;
+            botonScan.disabled = false;
+            botonScan.textContent = "REINTENTAR AUTENTICACIÓN";
+            escaneoEnProgreso = false;
+            return;
+        }
+
+        // Convertir Float32Array a Array estándar de 128 posiciones
+        const faceDescriptor = Array.from(resultadoDeteccion.descriptor);
+
+        campoMensaje.innerHTML = `<span style="color:#0b4d1e;">⚡ Comparando vector biométrico con la base de datos...</span>`;
+
+        // Enviar el vector al backend para verificación 1:N o 1:1
+        const respuesta = await fetch(`${API_URL}/api/login-facial`, {
             method: "POST",
             headers: {
-                "x-api-key": API_KEY // Autenticación local
+                "Content-Type": "application/json"
             },
-            body: formData
+            body: JSON.stringify({ faceDescriptor })
         });
 
-        const datos = await respuesta.json();
-        console.log("Respuesta del servidor:", datos);
+        const data = await respuesta.json();
 
-        // 4. Analizamos la respuesta de Inteligencia Artificial
-        if (datos.result && datos.result.length > 0 && datos.result[0].subjects.length > 0) {
-            const coincidencia = datos.result[0].subjects[0];
-            const nombreSoldado = coincidencia.subject;
-            const similitud = (coincidencia.similarity * 100).toFixed(2); // Convertimos a porcentaje
+        if (respuesta.ok && data.token) {
+            // Guardar el token de autenticación exactamente igual que en el login tradicional
+            localStorage.setItem("token", data.token);
 
-            // Umbral de seguridad militar (80% o más)
-            if (similitud >= 80) {
-                campoMensaje.innerHTML = `
-                    <div style="color: #0b4d1e; font-weight: bold; margin-top: 15px; border: 2px solid #0b4d1e; padding: 10px; background-color: #e8f5e9;">
-                        🟢 ACCESO CONCEDIDO <br>
-                        <span style="font-weight: normal; color: #333;">
-                            Identidad: ${nombreSoldado} <br>
-                            Coincidencia Biométrica: ${similitud}%
-                        </span>
-                    </div>
-                `;
+            const nombreUsuario = data.usuario ? `${data.usuario.nombre} ${data.usuario.apellido || ""}` : "Personal Autorizado";
+            const distancia = data.distancia !== undefined ? `(Distancia euclidiana: ${data.distancia})` : "";
 
-                // Registrar acceso en la base de datos
-                const token = localStorage.getItem("token");
-                const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decodificar JWT
-                const documento = decodedToken.documento;
-
-                try {
-                    await fetch(`${API_URL}/api/accesos`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                            documento: documento,
-                            estado: "autorizado"
-                        })
-                    });
-                } catch (error) {
-                    console.error("Error al registrar acceso:", error);
-                }
-
-                // ==========================================
-                //  REDIRECCIÓN A ACCESO AUTORIZADO
-                // ==========================================
-                setTimeout(() => {
-                    window.location.href = "/acceso_autorizado"; 
-                }, 2000); // Espera 2 segundos antes de redirigir
-
-            } else {
-                campoMensaje.innerHTML = `
-                    <div style="color: #b71c1c; font-weight: bold; margin-top: 15px; border: 2px solid #b71c1c; padding: 10px; background-color: #ffebee;">
-                        🔴 ACCESO DENEGADO <br>
-                        <span style="font-weight: normal; color: #333;">
-                            Nivel de confianza insuficiente (${similitud}%).
-                        </span>
-                    </div>
-                `;
-
-                // Registrar acceso denegado
-                const token = localStorage.getItem("token");
-                const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decodificar JWT
-                const documento = decodedToken.documento;
-
-                try {
-                    await fetch(`${API_URL}/api/accesos`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                            documento: documento,
-                            estado: "denegado"
-                        })
-                    });
-                } catch (error) {
-                    console.error("Error al registrar acceso denegado:", error);
-                }
-
-                // Redirigir a acceso denegado después de 2 segundos
-                setTimeout(() => {
-                    window.location.href = "/acceso_denegado";
-                }, 2000);
-            }
-        } else {
-            // El servidor procesó la foto pero no encontró a nadie que se le parezca
             campoMensaje.innerHTML = `
-                <div style="color: #b71c1c; font-weight: bold; margin-top: 15px; border: 2px solid #b71c1c; padding: 10px; background-color: #ffebee;">
-                    🔴 ACCESO DENEGADO <br>
-                    <span style="font-weight: normal; color: #333;">
-                        Rostro no registrado en la base de datos militar.
+                <div style="color: #0b4d1e; font-weight: bold; margin-top: 15px; border: 2px solid #0b4d1e; padding: 12px; background-color: #e8f5e9; border-radius: 8px;">
+                    🟢 ACCESO CONCEDIDO<br>
+                    <span style="font-size: 16px; color: #1b5e20;">Bienvenido, ${nombreUsuario}</span><br>
+                    <span style="font-size: 12px; font-weight: normal; color: #555;">Autenticación biométrica exitosa ${distancia}</span>
+                </div>
+            `;
+
+            detenerCamara();
+
+            // Redirigir a acceso autorizado tras 1.5 segundos
+            setTimeout(() => {
+                window.location.href = "/acceso_autorizado";
+            }, 1500);
+
+        } else {
+            campoMensaje.innerHTML = `
+                <div style="color: #b71c1c; font-weight: bold; margin-top: 15px; border: 2px solid #b71c1c; padding: 12px; background-color: #ffebee; border-radius: 8px;">
+                    🔴 ACCESO DENEGADO<br>
+                    <span style="font-size: 14px; font-weight: normal; color: #7f0000;">
+                        ${data.mensaje || "Rostro no coincide con ningún registro activo en el sistema."}
                     </span>
                 </div>
             `;
 
-            // Registrar acceso denegado (rostro no registrado)
-            const token = localStorage.getItem("token");
-            if (token) {
-                const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decodificar JWT
-                const documento = decodedToken.documento;
-
-                try {
-                    await fetch(`${API_URL}/api/accesos`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`
-                        },
-                        body: JSON.stringify({
-                            documento: documento,
-                            estado: "rostro_no_registrado"
-                        })
-                    });
-                } catch (error) {
-                    console.error("Error al registrar acceso denegado:", error);
-                }
-            }
-
-            // Redirigir a acceso denegado después de 2 segundos
-            setTimeout(() => {
-                window.location.href = "/acceso_denegado";
-            }, 2000);
+            botonScan.disabled = false;
+            botonScan.textContent = "INTENTAR DE NUEVO";
+            escaneoEnProgreso = false;
         }
 
     } catch (error) {
-        // Error si el Docker está apagado o la IP es incorrecta
+        console.error("Error durante el escaneo facial:", error);
         campoMensaje.innerHTML = `
-            <div style="color: red; font-weight: bold; margin-top: 15px;">
-                ❌ ERROR DE SISTEMA: <br>
-                <span style="font-weight: normal;">No se pudo conectar con el motor biométrico local. Asegúrate de que Docker esté corriendo.</span>
+            <div style="color: red; font-weight: bold; margin-top: 10px;">
+                ❌ Error de comunicación: ${error.message}
             </div>
         `;
-        console.error("Error al consumir CompreFace:", error);
+        botonScan.disabled = false;
+        botonScan.textContent = "REINTENTAR";
+        escaneoEnProgreso = false;
     }
+});
+
+// Inicializar la carga de modelos y la cámara al cargar la página
+window.addEventListener("DOMContentLoaded", async () => {
+    await cargarModelos();
+    await iniciarCamara();
+});
+
+// Detener la cámara al salir de la página
+window.addEventListener("beforeunload", () => {
+    detenerCamara();
 });
