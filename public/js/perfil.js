@@ -13,11 +13,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         historialPersonal: [],
         usuarios: [],
         usuarioSeleccionado: null,
-        filtrosHistorial: {}
+        filtrosHistorial: {},
+        fotoPreparada: null
     };
 
     const elements = {
         avatarIniciales: document.getElementById("avatarIniciales"),
+        fotoPerfil: document.getElementById("fotoPerfil"),
         perfilNombre: document.getElementById("perfilNombre"),
         perfilRango: document.getElementById("perfilRango"),
         estadoBadge: document.getElementById("estadoBadge"),
@@ -48,6 +50,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         formRango: document.getElementById("formRango"),
         crearUsuarioForm: document.getElementById("crearUsuarioForm"),
         editarUsuarioForm: document.getElementById("editarUsuarioForm"),
+        photoPreview: document.getElementById("photoSelectedPreview"),
+        photoInput: document.getElementById("photoInput"),
+        updatePhotoButton: document.getElementById("updatePhotoButton"),
         tabGlobalButton: document.getElementById("tabGlobalButton"),
         tabGestionButton: document.getElementById("tabGestionButton"),
         logoutButton: document.getElementById("logoutButton")
@@ -61,6 +66,59 @@ document.addEventListener("DOMContentLoaded", async () => {
     const normalizeStatusClass = (value) => {
         if (!value) return "autorizado";
         return value.toString().toUpperCase() === "DENEGADO" ? "denegado" : "autorizado";
+    };
+
+    const prepararFoto = async (archivo) => {
+        if (!archivo.type.startsWith("image/")) {
+            throw new Error("Selecciona un archivo de imagen válido.");
+        }
+        if (archivo.size > 12 * 1024 * 1024) {
+            throw new Error("La imagen original no puede superar 12 MB.");
+        }
+
+        const url = URL.createObjectURL(archivo);
+        try {
+            const imagen = new Image();
+            await new Promise((resolve, reject) => {
+                imagen.onload = resolve;
+                imagen.onerror = () => reject(new Error("No se pudo leer la imagen."));
+                imagen.src = url;
+            });
+            if (!imagen.naturalWidth || !imagen.naturalHeight) {
+                throw new Error("La imagen no tiene dimensiones válidas.");
+            }
+
+            const dimensionMaxima = 512;
+            const escala = Math.min(
+                1,
+                dimensionMaxima / Math.max(imagen.naturalWidth, imagen.naturalHeight)
+            );
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(imagen.naturalWidth * escala);
+            canvas.height = Math.round(imagen.naturalHeight * escala);
+            canvas.getContext("2d").drawImage(imagen, 0, 0, canvas.width, canvas.height);
+
+            for (const calidad of [0.85, 0.75, 0.65, 0.55]) {
+                const blob = await new Promise((resolve) =>
+                    canvas.toBlob(resolve, "image/jpeg", calidad)
+                );
+                if (!blob) {
+                    throw new Error("No se pudo preparar la imagen.");
+                }
+                if (blob.size <= 350 * 1024) {
+                    return await new Promise((resolve, reject) => {
+                        const lector = new FileReader();
+                        lector.onload = () => resolve(lector.result);
+                        lector.onerror = () => reject(new Error("No se pudo preparar la imagen."));
+                        lector.readAsDataURL(blob);
+                    });
+                }
+            }
+
+            throw new Error("La foto es demasiado pesada. Prueba con otra imagen.");
+        } finally {
+            URL.revokeObjectURL(url);
+        }
     };
 
     const formatDate = (value) => {
@@ -123,8 +181,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         const ultimo = personalHistory[0];
         const accStatus = ultimo ? normalizeStatus(ultimo.estado) : "Autorizado";
         const esAdmin = isAdminRole(usuario);
+        const fotoPerfil = usuario.foto_perfil;
 
         elements.avatarIniciales.textContent = `${(usuario.nombre || "U").charAt(0)}${(usuario.apellido || "").charAt(0) || ""}`.toUpperCase();
+        if (fotoPerfil) {
+            elements.fotoPerfil.src = fotoPerfil;
+            elements.fotoPerfil.alt = `Foto de ${nombreCompleto}`;
+            elements.fotoPerfil.style.display = "block";
+            elements.avatarIniciales.style.display = "none";
+        } else {
+            elements.fotoPerfil.removeAttribute("src");
+            elements.fotoPerfil.style.display = "none";
+            elements.avatarIniciales.style.display = "flex";
+        }
         elements.perfilNombre.textContent = nombreCompleto || "Usuario SAFFE";
         elements.perfilRango.textContent = esAdmin ? `Administrador · ${rango}` : rango;
         elements.perfilResumen.textContent = esAdmin
@@ -353,6 +422,61 @@ document.addEventListener("DOMContentLoaded", async () => {
         await loadData({});
     });
 
+    elements.photoInput?.addEventListener("change", async () => {
+        const archivo = elements.photoInput.files[0];
+        state.fotoPreparada = null;
+        elements.updatePhotoButton.disabled = true;
+        if (!archivo || !state.usuarioSeleccionado) {
+            return;
+        }
+
+        try {
+            state.fotoPreparada = await prepararFoto(archivo);
+            elements.photoPreview.src = state.fotoPreparada;
+            elements.photoPreview.style.display = "block";
+            elements.updatePhotoButton.disabled = false;
+        } catch (error) {
+            elements.photoInput.value = "";
+            console.error("Error preparando foto:", error);
+            alert(error.message || "No se pudo preparar la foto.");
+        }
+    });
+
+    elements.updatePhotoButton?.addEventListener("click", async () => {
+        if (!state.usuarioSeleccionado || !state.fotoPreparada) {
+            alert("Selecciona un usuario y una foto antes de guardar.");
+            return;
+        }
+
+        elements.updatePhotoButton.disabled = true;
+        try {
+            const response = await fetch(
+                `${apiUrl}/api/usuarios/${encodeURIComponent(state.usuarioSeleccionado)}/foto`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ foto: state.fotoPreparada })
+                }
+            );
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.mensaje || "No se pudo actualizar la foto.");
+            }
+
+            elements.photoInput.value = "";
+            state.fotoPreparada = null;
+            alert("Foto de perfil actualizada correctamente.");
+            await loadData();
+        } catch (error) {
+            console.error("Error actualizando foto:", error);
+            alert(error.message || "No se pudo actualizar la foto.");
+            elements.updatePhotoButton.disabled = false;
+        }
+    });
+
     elements.logoutButton?.addEventListener("click", () => {
         localStorage.removeItem("token");
         window.location.href = "/";
@@ -395,7 +519,30 @@ document.addEventListener("DOMContentLoaded", async () => {
             const usuario = state.usuarios.find((item) => item.documento === doc);
             if (usuario) {
                 populateUserForm(usuario);
+                state.fotoPreparada = null;
+                elements.photoInput.value = "";
+                elements.photoInput.disabled = false;
+                elements.updatePhotoButton.disabled = true;
+                elements.photoPreview.removeAttribute("src");
+                elements.photoPreview.style.display = "none";
                 setActiveTab("tab-gestion");
+
+                try {
+                    const response = await fetch(`${apiUrl}/api/usuarios/${encodeURIComponent(doc)}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const detalle = await response.json();
+                    if (!response.ok) {
+                        throw new Error(detalle.mensaje || "No se pudo cargar el perfil seleccionado.");
+                    }
+                    if (state.usuarioSeleccionado === doc && detalle.foto_perfil) {
+                        elements.photoPreview.src = detalle.foto_perfil;
+                        elements.photoPreview.style.display = "block";
+                    }
+                } catch (error) {
+                    console.error("Error cargando el perfil seleccionado:", error);
+                    alert(error.message || "No se pudo cargar el perfil seleccionado.");
+                }
             }
         }
 

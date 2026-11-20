@@ -27,6 +27,7 @@
             <section class="profile-card profile-header-card">
                 <div class="avatar-wrapper">
                     <div id="avatarIniciales" class="avatar">U</div>
+                    <img id="fotoPerfil" class="avatar avatar-photo" alt="Foto de perfil" style="display: none;">
                 </div>
 
                 <div class="identity-block">
@@ -246,6 +247,19 @@
                         </div>
                         <button type="submit" class="primary-button">Guardar cambios</button>
                     </form>
+
+                    <div class="photo-editor">
+                        <h3>Actualizar foto del usuario seleccionado</h3>
+                        <img id="photoSelectedPreview" class="photo-preview" alt="Vista previa de la foto" style="display: none;">
+                        <label>
+                            Seleccionar foto
+                            <input id="photoInput" type="file" accept="image/*" disabled>
+                        </label>
+                        <button id="updatePhotoButton" type="button" class="primary-button" disabled>
+                            Actualizar foto
+                        </button>
+                        <p>Selecciona primero una persona en la tabla. La foto se ajustará automáticamente antes de guardarse.</p>
+                    </div>
                 </div>
             </section>
         </main>
