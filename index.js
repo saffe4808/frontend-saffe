@@ -43,7 +43,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.get("/config.js", (req, res) => {
-    const backendUrl = process.env.BACKEND_URL || "https://saffe-backend.up.railway.app";
+    const backendUrl = process.env.BACKEND_URL || "https://backend-saffe.onrender.com";
     const comprefaceUrl = process.env.COMPREFACE_URL || "http://localhost:8000";
     const comprefaceKey = process.env.COMPREFACE_API_KEY || "";
 

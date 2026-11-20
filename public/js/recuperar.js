@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const apiUrl = (window.SAFFE_API_URL || "https://saffe-backend.up.railway.app")
+    const apiUrl = (window.SAFFE_API_URL || "https://backend-saffe.onrender.com")
         .replace(/\/+$/, "");
     const recoverForm = document.getElementById("recoverForm");
     const resetPasswordForm = document.getElementById("resetPasswordForm");

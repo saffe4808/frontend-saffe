@@ -1,4 +1,4 @@
-const getApiUrl = () => process.env.BACKEND_URL || "https://saffe-backend.up.railway.app";
+const getApiUrl = () => process.env.BACKEND_URL || "https://backend-saffe.onrender.com";
 
 export const getLogin = (req, res) => res.render("login", { apiUrl: getApiUrl() });
 export const getRecuperar = (req, res) => res.render("recuperar", { apiUrl: getApiUrl() });

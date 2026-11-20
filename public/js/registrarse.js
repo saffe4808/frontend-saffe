@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const apiUrl = (window.SAFFE_API_URL || "https://saffe-backend.up.railway.app").replace(/\/+$/, "");
+    const apiUrl = (window.SAFFE_API_URL || "https://backend-saffe.onrender.com").replace(/\/+$/, "");
     const form = document.getElementById("form-registro");
     const checkPrivacidad = document.getElementById("check-privacidad");
     const btnRegistrar = document.getElementById("btn-registrar");
