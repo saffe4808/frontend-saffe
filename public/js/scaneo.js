@@ -204,6 +204,15 @@ botonScan.addEventListener("click", async () => {
             escaneoEnProgreso = false;
         }
 
+        localStorage.setItem("token", datos.token);
+
+        mensaje.textContent =
+            "ACCESO CONCEDIDO. Bienvenido " + datos.usuario.nombre;
+
+        setTimeout(() => {
+            window.location.href = "/acceso_autorizado";
+        }, 1500);
+
     } catch (error) {
         console.error("Error durante el escaneo facial:", error);
         campoMensaje.innerHTML = `
